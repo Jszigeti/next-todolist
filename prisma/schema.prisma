@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+}
+
+model Task {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String
+  category      Category   @relation(fields: [categoryId], references: [id])
+  categoryId    Int
+  status        Status     @default(PENDING)
+  priority      Priority   @default(MEDIUM)
+  term          DateTime   @db.Date
+  createdAt     DateTime   @default(now()) @db.Date
+  updatedAt     DateTime?  @updatedAt @db.Date
+  author        User       @relation("TaskAuthor", fields: [authorId], references: [id])
+  authorId      Int
+  assignedUsers UserOnTask[]
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  firstName     String
+  lastName      String
+  email         String       @unique
+  password      String
+  tasksCreated  Task[]        @relation("TaskAuthor")
+  assignedTasks UserOnTask[]
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  tasks Task[]
+}
+
+model UserOnTask {
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+  task   Task @relation(fields: [taskId], references: [id])
+  taskId Int
+
+  @@id([userId, taskId])
+}
+
+enum Status {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
